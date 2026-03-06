@@ -12,16 +12,16 @@
     "dev": "ts-node src/index.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "googleapis": "^128.0.0",
-    "express": "^4.19.0",
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "express": "^5.2.1",
+    "googleapis": "^171.4.0",
     "open": "^10.1.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^20.11.0",
-    "@types/express": "^4.17.0",
-    "typescript": "^5.3.3",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   },
   "type": "module"
 }

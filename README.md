@@ -8,6 +8,8 @@ A working Model Context Protocol (MCP) server for Google's Blogger API that enab
 - List blog posts with pagination
 - Retrieve specific posts by ID
 - Search posts within a blog
+- Separate read-only OAuth from write OAuth
+- Safer defaults for post creation and deletion
 - Proper MCP protocol implementation
 - TypeScript support with full type safety
 
@@ -62,8 +64,10 @@ For **Claude Desktop**, add to your `claude_desktop_config.json`:
       "env": {
         "BLOGGER_API_KEY": "your_google_api_key_here",
         "BLOGGER_ID": "your_blog_id_here",
+        "BLOGGER_ALLOW_BLOG_OVERRIDE": "false",
         "GOOGLE_CLIENT_ID": "your_oauth_client_id_here",
-        "GOOGLE_CLIENT_SECRET": "your_oauth_client_secret_here"
+        "GOOGLE_CLIENT_SECRET": "your_oauth_client_secret_here",
+        "BLOGGER_TOKEN_PATH": "/secure/path/to/blogger-tokens.json"
       }
     }
   }
@@ -89,7 +93,7 @@ Once configured, you can interact with your Blogger blog through natural languag
 - "Update the post with ID 123456789"
 - "Delete the draft post with ID 987654321"
 
-**Important**: Always use the correct blog URL or ID. The server will target the specific blog you reference in your requests.
+**Important**: If `BLOGGER_ID` is set, the server locks requests to that blog by default. Set `BLOGGER_ALLOW_BLOG_OVERRIDE=true` only if you intentionally want cross-blog access.
 
 ### Finding Your Blog ID
 
@@ -124,9 +128,18 @@ Use the `id` field for subsequent operations like creating posts.
   - Acts as a fallback when `blogId` or `blogUrl` parameters are missing or empty
   - Makes commands more concise: "List my draft posts" instead of "List draft posts for blog 1234567890123456789"
 - **How to find**: Use the `get_blog_info` tool with your blog URL to retrieve the ID
-- **Note**: You can still override this by explicitly providing a `blogId` in any tool call
+- **Safety default**: Requests are locked to this blog unless `BLOGGER_ALLOW_BLOG_OVERRIDE=true`
 
-**GOOGLE_CLIENT_ID** and **GOOGLE_CLIENT_SECRET** (required for write operations and drafts)
+**BLOGGER_ALLOW_BLOG_OVERRIDE** (optional)
+- Defaults to `false`
+- Set to `true` only if you want the MCP server to target blogs other than `BLOGGER_ID`
+
+**BLOGGER_TOKEN_PATH** (optional)
+- Path for the saved OAuth token file
+- Defaults to `~/.config/blogger-mcp-server/tokens.json`
+- The file is written with restricted permissions
+
+**GOOGLE_CLIENT_ID** and **GOOGLE_CLIENT_SECRET** (required for drafts and write operations)
 - OAuth 2.0 credentials from Google Cloud Console
 - Required for creating, updating, or deleting posts
 - Required for accessing draft posts (drafts require authenticated access)
@@ -139,7 +152,7 @@ Use the `id` field for subsequent operations like creating posts.
 Get comprehensive information about a blog.
 
 **Parameters:**
-- `blogUrl` (string): Blog URL (e.g., `myblog.blogspot.com`) or Blog ID
+- `blogUrl` (string, optional): Blog URL (e.g., `myblog.blogspot.com`) or Blog ID. If omitted, `BLOGGER_ID` is used.
 
 ### list_posts
 List posts from a specific blog. Can filter by status to show drafts, published posts, or scheduled posts.
@@ -148,20 +161,49 @@ List posts from a specific blog. Can filter by status to show drafts, published 
 - `blogId` (string, optional): The blog's ID. If not provided, uses BLOGGER_ID from environment variables
 - `maxResults` (number, optional): Maximum posts to return (default: 10)
 - `status` (string, optional): Filter by status - "draft", "live", or "scheduled". Note: Drafts and scheduled posts require OAuth authentication
+- `includeContent` (boolean, optional): Include full post HTML bodies in the response. Defaults to `false`
 
 ### get_post
 Retrieve a specific blog post.
 
 **Parameters:**
-- `blogId` (string): The blog's ID
+- `blogId` (string, optional): The blog's ID. If not provided, uses BLOGGER_ID
 - `postId` (string): The post's ID
 
 ### search_posts
 Search for posts within a blog.
 
 **Parameters:**
-- `blogId` (string): The blog's ID
+- `blogId` (string, optional): The blog's ID. If not provided, uses BLOGGER_ID
 - `query` (string): Search terms
+
+### create_post
+Create a new blog post.
+
+**Parameters:**
+- `blogId` (string, optional): The blog's ID. If not provided, uses BLOGGER_ID
+- `title` (string): Post title
+- `content` (string): Post HTML content
+- `labels` (string[], optional): Post labels
+- `isDraft` (boolean, optional): Defaults to `true`. Set to `false` to publish immediately
+
+### update_post
+Update an existing post.
+
+**Parameters:**
+- `blogId` (string, optional): The blog's ID. If not provided, uses BLOGGER_ID
+- `postId` (string): The post's ID
+- `title` (string, optional): New title
+- `content` (string, optional): New HTML content
+- `labels` (string[], optional): New labels
+
+### delete_post
+Delete a post.
+
+**Parameters:**
+- `blogId` (string, optional): The blog's ID. If not provided, uses BLOGGER_ID
+- `postId` (string): The post's ID
+- `confirmPostId` (string): Must exactly match `postId`
 
 ## Development
 
@@ -210,14 +252,14 @@ Note these Blogger API limitations:
 #### OAuth Authentication Issues
 1. **Missing redirect URI**: Add `http://localhost:3000/oauth/callback` to your OAuth client in Google Cloud Console
 2. **Wrong application type**: Use "Web application" not "Desktop application" for OAuth client
-3. **Missing scopes**: Ensure both `https://www.googleapis.com/auth/blogger` and `https://www.googleapis.com/auth/blogger.readonly` are added to OAuth consent screen
+3. **Missing scopes**: Ensure Blogger read-only and write scopes are allowed for your OAuth client
 4. **Test user setup**: Add your Google account as a test user if the app is in testing mode
 
 #### "Tool execution failed" Errors
 1. **Wrong blog ID**: Ensure you're using the correct blog ID for your target blog
 2. **ES module errors**: If you see `__dirname is not defined`, rebuild the project with `npm run build`
-3. **Token file permissions**: Tokens should save to the project directory, not system root
-4. **Stale tokens**: Delete `tokens.json` and restart to force fresh OAuth flow
+3. **Token file permissions**: The token path should be writable only by your user account
+4. **Stale tokens**: Delete the configured token file and restart to force fresh OAuth flow
 
 #### Permission Errors
 - **"You don't have permission to access this resource"**: Verify you're targeting the correct blog ID and have admin access

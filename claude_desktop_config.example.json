@@ -8,8 +8,10 @@
       "env": {
         "BLOGGER_API_KEY": "your_google_api_key_here",
         "BLOGGER_ID": "your_blog_id_here_optional_but_recommended",
+        "BLOGGER_ALLOW_BLOG_OVERRIDE": "false",
         "GOOGLE_CLIENT_ID": "your_oauth_client_id_here",
-        "GOOGLE_CLIENT_SECRET": "your_oauth_client_secret_here"
+        "GOOGLE_CLIENT_SECRET": "your_oauth_client_secret_here",
+        "BLOGGER_TOKEN_PATH": "/Users/you/.config/blogger-mcp-server/tokens.json"
       }
     }
   }

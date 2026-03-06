@@ -18,12 +18,19 @@ To enable post creation, updating, and deletion, you need to set up OAuth 2.0 au
 Add these to your environment (or Claude config):
 
 ```bash
-# Required for write operations (create/update/delete posts)
+# Required for authenticated draft access and write operations
 GOOGLE_CLIENT_ID=your_oauth_client_id_here
 GOOGLE_CLIENT_SECRET=your_oauth_client_secret_here
 
 # Still needed for read operations if OAuth fails
 BLOGGER_API_KEY=your_api_key_here
+
+# Optional: lock the server to one blog unless explicitly overridden
+BLOGGER_ID=your_blog_id_here
+BLOGGER_ALLOW_BLOG_OVERRIDE=false
+
+# Optional: store tokens outside the repo checkout
+BLOGGER_TOKEN_PATH=$HOME/.config/blogger-mcp-server/tokens.json
 ```
 
 ## Step 3: Update Claude Configuration
@@ -52,15 +59,16 @@ When you first try to create a post:
 
 1. The server will automatically open your browser
 2. Sign in to Google and grant permissions
-3. The server will save OAuth tokens locally (`tokens.json`)
+3. The server will save OAuth tokens locally (default: `~/.config/blogger-mcp-server/tokens.json`)
 4. Future requests will use the saved tokens automatically
 
 ## Security Notes
 
-- The `tokens.json` file contains sensitive auth tokens
-- It's already added to `.gitignore` to prevent accidental commits
+- The OAuth token file contains sensitive auth tokens
+- Tokens are stored with restricted file permissions
+- You can override the token file path with `BLOGGER_TOKEN_PATH`
 - Keep your OAuth credentials secure
-- The server runs a temporary local server (port 3000) only during authentication
+- The server runs a temporary local server on `127.0.0.1` only during authentication
 
 ## Troubleshooting
 
@@ -74,6 +82,6 @@ When you first try to create a post:
 - Try deleting `tokens.json` to force re-authentication
 
 ### Port 3000 in use
-- The OAuth flow temporarily uses port 3000
-- Make sure it's available during authentication
+- The OAuth flow temporarily uses port 3000 by default
+- Set `BLOGGER_OAUTH_PORT` if you need a different local callback port
 - After authentication completes, the port is freed

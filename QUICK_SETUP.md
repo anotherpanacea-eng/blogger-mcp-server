@@ -45,8 +45,11 @@ File: `~/Library/Application Support/Claude/claude_desktop_config.json`
       "args": ["/full/path/to/blogger-mcp-server/dist/index.js"],
       "env": {
         "BLOGGER_API_KEY": "your_api_key",
+        "BLOGGER_ID": "your_blog_id",
+        "BLOGGER_ALLOW_BLOG_OVERRIDE": "false",
         "GOOGLE_CLIENT_ID": "your_client_id",
-        "GOOGLE_CLIENT_SECRET": "your_client_secret"
+        "GOOGLE_CLIENT_SECRET": "your_client_secret",
+        "BLOGGER_TOKEN_PATH": "/Users/you/.config/blogger-mcp-server/tokens.json"
       }
     }
   }
@@ -60,6 +63,7 @@ Get information about my blog at myblog.blogspot.com
 List recent posts from my blog
 Create a draft post about my photography workflow
 Search for posts about weddings in my blog
+Delete post 123 only if I confirm with the same ID
 ```
 
 ## File Structure
@@ -68,7 +72,7 @@ blogger-mcp-server/
 ├── src/
 │   ├── index.ts          # Main MCP server
 │   └── oauth.ts          # OAuth authentication
-├── dist/                 # Compiled JavaScript
-├── tokens.json          # OAuth tokens (auto-generated)
-└── claude_desktop_config.example.json
+├── dist/                         # Compiled JavaScript
+├── claude_desktop_config.example.json
+└── ~/.config/blogger-mcp-server/ # Default OAuth token directory
 ```
