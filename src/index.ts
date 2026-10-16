@@ -9,6 +9,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { google } from 'googleapis';
 import { BloggerOAuth } from './oauth.js';
+import { parseIsDraft } from './validation.js';
 
 const API_KEY = process.env.BLOGGER_API_KEY;
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -258,7 +259,7 @@ class BloggerMCPServer {
                 },
                 isDraft: {
                   type: 'boolean',
-                  description: 'Whether to create a draft. Defaults to true. Set false to publish immediately.',
+                  description: 'Whether to create a draft. Must be a boolean; omit it for a draft. Set false to publish immediately. Any non-boolean value is rejected.',
                   default: true,
                 },
               },
@@ -356,14 +357,17 @@ class BloggerMCPServer {
               args.query as string
             );
 
-          case 'create_post':
+          case 'create_post': {
+            // Validate before any auth or API work so a malformed flag never publishes.
+            const isDraft = parseIsDraft(args.isDraft);
             return await this.createPost(
               args.blogId as string | undefined,
               args.title as string,
               args.content as string,
               (args.labels as string[] | undefined) || [],
-              args.isDraft as boolean | undefined
+              isDraft
             );
+          }
 
           case 'update_post':
             return await this.updatePost(
@@ -578,8 +582,8 @@ class BloggerMCPServer {
     blogId: string | undefined,
     title: string,
     content: string,
-    labels: string[] = [],
-    isDraft: boolean = true
+    labels: string[],
+    isDraft: boolean
   ) {
     try {
       const targetBlogId = this.resolveBlogId(blogId);

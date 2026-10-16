@@ -185,7 +185,7 @@ Create a new blog post.
 - `title` (string): Post title
 - `content` (string): Post HTML content
 - `labels` (string[], optional): Post labels
-- `isDraft` (boolean, optional): Defaults to `true`. Set to `false` to publish immediately
+- `isDraft` (boolean, optional): Defaults to `true` when omitted. Set to `false` to publish immediately. Any non-boolean value (for example `null`, `0`, `""` or `"false"`) is rejected and no post is created
 
 ### update_post
 Update an existing post.
